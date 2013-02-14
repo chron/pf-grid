@@ -1,0 +1,14 @@
+<html>
+	<head>
+		<title>Index</title>
+	</head>
+	<body>
+		<h1>Available Boards</h1>
+    	<ul>
+    	<% @boards.each do |b| %>
+    		<li><a href="<%= url("/show/#{b.id}") %>"><%= b.name %></a></li>
+    	<% end %>
+    	</ul>
+    	<p>Create <a href="<%= url('/create/test') %>">a new</a> board.
+  	</body>
+</html>

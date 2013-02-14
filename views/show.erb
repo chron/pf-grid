@@ -9,6 +9,11 @@
 	</head>
 	<body onload="init()">
     	<div id="main_grid" class="grid"></div>
-    	<button onclick="updatePositions()">Update</button>
+    	<div id="grid_-1_-1" class="cell holding_area"> </div>
+
+    	<div id="controls">
+    		<input type="text" id="entity_name"/><button onclick="sendCreateRequest($('#entity_name').val())">Create Unit</button> <br />
+    		<button onclick="updatePositions()">Update</button>
+    	</div>
 	</body>
 </html>

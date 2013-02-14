@@ -5,11 +5,13 @@ function init() {
   updatePositions()
 }
 
-function updatePositions() {
-  // FIXME
+function boardId() {
   match = /^.+([0-9]+)$/.exec(window.location)
+  return match[1]
+}
 
-  request = $.ajax('/entities/' + match[1], {dataType: 'json'})
+function updatePositions() {
+  request = $.ajax('/entities/list/' + boardId(), {dataType: 'json'})
   
   request.done(function(data) {
     $.each(data, function(i,e) {
@@ -27,18 +29,25 @@ function updatePositions() {
   request.fail(function(jqXHR, textStatus) {
     alert( "Request failed: " + textStatus );
   });
+
+  //setTimeout('updatePositions()', 5000)
 }
 
 function createObject(entity_data) {
   var obj = $(document.createElement('div'))
   obj.data('entity-id', entity_data.id)
   obj.addClass(entity_data.type)
-  obj.html(entity_data.text)
+  
+  var sprite = $(document.createElement('img'))
+  sprite.attr('src', entity_data.image)
+  obj.append(sprite)
+
+  //obj.html('A') //entity_data.name)
 
   obj.draggable({
     addClasses: false,
-    containment: $('#main_grid'),
-    cursor: 'crosshair',
+    //containment: $('#main_grid'),
+    cursor: 'hand',
     // grid: [50, 20]
     // opacity: 0.35
     revert: true, // # 'invalid' / 'valid'
@@ -57,8 +66,23 @@ function moveObject(obj, nx, ny) {
   c.append(obj)
 }
 
+function sendCreateRequest(name) {
+  request = $.ajax('/entities/add/' + boardId(), {
+    data: {name: name},
+    dataType: 'json'}
+  )
+
+  request.done(function(data) {
+    createObject(data)
+  })
+  
+  request.fail(function(jqXHR, textStatus) {
+    alert( "Request failed: " + textStatus );
+  });
+}
+
 function sendMoveRequest(id, nx, ny) {
-  request = $.ajax('/move/' + match[1], {
+  request = $.ajax('/move/' + id, {
     data: {x: nx, y: ny},
     dataType: 'json'}
   )
@@ -93,7 +117,7 @@ function createGrid(grid_name, width, height) {
   $(".cell").droppable({
     addClasses: false,
     drop: function(event, ui) {
-      var match = /^grid_(\d+)_(\d+)$/.exec(this.id)
+      var match = /^grid_(-?\d+)_(-?\d+)$/.exec(this.id)
       sendMoveRequest(ui.draggable.data('entity-id'), match[1], match[2]) 
     },
     hoverClass: 'drop-hover'

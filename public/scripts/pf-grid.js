@@ -1,79 +1,103 @@
-var objects = {}
+BattleGrid = function(element_ref, width, height) {
+  self = this
+  self.element_ref = element_ref
+  self.width = width
+  self.height = height
+  self.objects = {}
 
-function init() {
-  createGrid('#main_grid', 10, 10)  
-  updatePositions()
-}
-
-function boardId() {
   match = /^.+([0-9]+)$/.exec(window.location)
-  return match[1]
+  self.boardId = match[1]
+
+  self.createGrid()
+  self.updatePositions()
 }
 
-function updatePositions() {
-  request = $.ajax('/entities/list/' + boardId(), {dataType: 'json'})
+BattleGrid.prototype.updatePositions = function() {
+  request = $.ajax('/entities/list/' + self.boardId, {dataType: 'json'})
   
   request.done(function(data) {
     $.each(data, function(i,e) {
-      var obj = objects[e.id] 
+      var obj = self.objects[e.id] 
 
       if (obj == null) {
-        objects[e.id] = createObject(e)
+        self.createObject(e)
       } else {
-        // TODO: change object state/text here too?
-        moveObject(objects[e.id], e.x, e.y)
+        self.moveObject(self.objects[e.id], e.x, e.y)
       }
     })
+
+    setTimeout('self.updatePositions()', 3000)
   })
   
   request.fail(function(jqXHR, textStatus) {
     alert( "Request failed: " + textStatus );
   });
-
-  //setTimeout('updatePositions()', 5000)
 }
 
-function createObject(entity_data) {
+BattleGrid.prototype.createObject = function(entity_data) {
   var obj = $(document.createElement('div'))
   obj.data('entity-id', entity_data.id)
   obj.addClass(entity_data.type)
   
-  var sprite = $(document.createElement('img'))
-  sprite.attr('src', entity_data.image)
-  obj.append(sprite)
+  //var sprite = $(document.createElement('img'))
+  //sprite.attr('src', entity_data.image)
+  //obj.append(sprite)
 
-  //obj.html('A') //entity_data.name)
+  var objName = entity_data.name.substring(0,1)
+  var match = /(\d+)$/.exec(entity_data.name)
+
+  if (match != null) {
+    objName += '<sup>' + match[1] + '</sup>'
+  }
+
+  obj.html(objName)
 
   obj.draggable({
     addClasses: false,
     //containment: $('#main_grid'),
-    cursor: 'hand',
-    // grid: [50, 20]
+    cursor: 'pointer',
+    //grid: [21, 21], // would be cool but need to change on page zoom
     // opacity: 0.35
-    revert: true, // # 'invalid' / 'valid'
+    revert: 'invalid',
+    //revertDuration: 0,
     // snap & snapmode
-    stop: function() { },
-    
   })
   
-  moveObject(obj, entity_data.x, entity_data.y)
+  //$('.holding_cell').append(obj)
+  self.moveObject(obj, entity_data.x, entity_data.y)
   
+  self.objects[entity_data.id] = obj
+
   return obj
 }
 
-function moveObject(obj, nx, ny) {
-  var c = cell(nx, ny)
-  c.append(obj)
+BattleGrid.prototype.deleteObject = function(id) {
+  self.objects[id].remove()
+  delete self.objects[id]
 }
 
-function sendCreateRequest(name) {
-  request = $.ajax('/entities/add/' + boardId(), {
-    data: {name: name},
+BattleGrid.prototype.moveObject = function(obj, nx, ny) {
+  var newParentCell = self.cell(nx, ny)
+
+  obj.css("left", '')
+  obj.css("top", '')
+
+  newParentCell.append(obj)
+}
+
+BattleGrid.prototype.sendCreateRequest = function(name, type) {
+  if (name == '') {
+    alert("No name?")
+    return false
+  }
+
+  request = $.ajax('/entities/add/' + self.boardId, {
+    data: {name: name, type: type},
     dataType: 'json'}
   )
 
   request.done(function(data) {
-    createObject(data)
+    self.createObject(data)
   })
   
   request.fail(function(jqXHR, textStatus) {
@@ -81,14 +105,32 @@ function sendCreateRequest(name) {
   });
 }
 
-function sendMoveRequest(id, nx, ny) {
+BattleGrid.prototype.sendDeleteRequest = function(id) {
+  request = $.ajax('/entities/delete/' + id, {
+    dataType: 'json'}
+  )
+
+  request.done(function(returnValue) {
+    if (returnValue) {
+      self.deleteObject(id)
+    }
+  })
+  
+  request.fail(function(jqXHR, textStatus) {
+    alert( "Request failed: " + textStatus );
+  });
+}
+
+BattleGrid.prototype.sendMoveRequest = function(id, nx, ny) {
   request = $.ajax('/move/' + id, {
     data: {x: nx, y: ny},
     dataType: 'json'}
   )
 
-  request.done(function(data) {
-    moveObject(objects[id], nx, ny)
+  request.done(function(returnValue) {
+    if (returnValue) {
+      self.moveObject(self.objects[id], nx, ny)
+    }
   })
   
   request.fail(function(jqXHR, textStatus) {
@@ -96,16 +138,15 @@ function sendMoveRequest(id, nx, ny) {
   });
 }
 
-function createGrid(grid_name, width, height) {
-  e = $(grid_name)
+BattleGrid.prototype.createGrid = function() {
+  e = $(self.element_ref)
   e.innerHTML = ''
   
-  for(y = 0; y < height; y++) {
+  for(y = 0; y < self.height; y++) {
     var row = $(document.createElement('div'))
     row.addClass('row')
     
-    for(x = 0; x < width; x++) {
-    
+    for(x = 0; x < self.width; x++) {
       var cell = $(document.createElement('div'))
       cell.attr('id', 'grid_' + x + '_' + y)
       cell.addClass('cell')
@@ -118,13 +159,21 @@ function createGrid(grid_name, width, height) {
     addClasses: false,
     drop: function(event, ui) {
       var match = /^grid_(-?\d+)_(-?\d+)$/.exec(this.id)
-      sendMoveRequest(ui.draggable.data('entity-id'), match[1], match[2]) 
+      self.sendMoveRequest(ui.draggable.data('entity-id'), match[1], match[2])
+    },
+    hoverClass: 'drop-hover'
+  })
+
+$("#trash").droppable({
+    addClasses: false,
+    drop: function(event, ui) {
+      var match = /^grid_(-?\d+)_(-?\d+)$/.exec(this.id)
+      self.sendDeleteRequest(ui.draggable.data('entity-id'))
     },
     hoverClass: 'drop-hover'
   })
 }
 
-
-function cell(x, y) {
+BattleGrid.prototype.cell = function(x, y) {
   return $('#grid_'+x+'_'+y)
 }

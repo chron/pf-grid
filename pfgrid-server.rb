@@ -2,6 +2,7 @@ require 'sinatra'
 require 'sinatra/reloader' if development?
 require 'dm-core'
 require 'dm-migrations'
+require 'dm-aggregates'
 require 'json'
 
 DataMapper.setup( :default, "sqlite3://#{Dir.pwd}/pfgrid.db" )
@@ -11,7 +12,10 @@ class Board
 
 	property :id, Serial
 	property :name, String
+	property :width, Integer, :default => 15
+	property :height, Integer, :default => 15
 	property :created_at, DateTime
+	property :last_move, DateTime
 
 	has n, :entities
 end
@@ -34,53 +38,63 @@ DataMapper.finalize
 
 configure do
   mime_type :css, 'text/css'
-end
-
-def entity_to_hash e
-	{:id => e.id, :name => e.name, :image => e.image, :type => e.type, :x => e.x, :y => e.y}
+  #static_cache_control 
 end
 
 get '/' do
-  @boards = Board.all
+  @boards = Board.all(:order => :last_move.desc)
   erb :index
 end
 
 get '/create/:name' do |n|
-	halt 'invalid name' if n !~ /^[a-zA-Z ]/
-
-	b = Board.create(:name => n, :created_at => Time.now)
-	redirect to('/')
+	b = Board.create(:name => n, :created_at => Time.now, :last_move => Time.now)
+	b.attributes.to_json
 end
 
-get '/board/:id' do
-	# @board_id = params[:id]
+get '/board/:id' do |id|
+	@board = Board.get(id)
+
 	erb :show
 end
 
 get '/entities/list/:board' do |board|
-	entities = Board.get!(board).entities	
-	entities.map { |e| entity_to_hash(e) }.to_json
+	board = Board.get!(board)
+	last_modified board.last_move
+	board.entities.map { |e| e.attributes }.to_json
 end
 
 get '/entities/add/:board' do |board|
 	b = Board.get!(board)
-	e = Entity.create(:name => params[:name], :image => "/images/#{%w(archer cultist).sample}.png", :type => %w(friendly hostile).sample, :x => 1, :y => 1)
+	e = Entity.create(:name => params[:name], :type => params[:type], :x => -1, :y => -1)
+	b.last_move = Time.now
 	b.entities << e
 	b.save
 
-	entity_to_hash(e).to_json
+	e.attributes.to_json
+end
+
+get '/entities/delete/:id' do |id|
+	e = Entity.get!(id.to_i)
+	e.board.last_move = Time.now
+	e.board.save
+	e.destroy.to_s
 end
 
 get '/move/:entity' do |entity_id|
-	e = Entity.get!(entity_id)
-	e.x = params[:x]
-	e.y = params[:y]
-	e.save
+	nx, ny = params[:x], params[:y]
+	e = Entity.get(entity_id)
 
-	'true'
+	rval = if e && ((nx == -1 && ny == -1) || Entity.count(:x => nx, :y => ny) == 0)
+		e.x = nx
+		e.y = ny
+		e.board.last_move = Time.now
+		e.save
+	end
+
+	rval.to_json
 end
 
-b = Board.new(:name => 'Party Setup', :created_at => Time.now)
+b = Board.new(:name => 'Demonstration', :created_at => Time.now, :last_move => Time.now)
 b.entities << Entity.create(:name => 'Ferra', :image => '/images/archer.png', :type => 'friendly', :x => 3, :y => 1)
 b.entities << Entity.create(:name => 'Elena', :image => '/images/witch.png', :type => 'friendly', :x => 2, :y => 1)
 b.entities << Entity.create(:name => 'Miguel', :image => '/images/bard.png', :type => 'friendly', :x => 3, :y => 2)

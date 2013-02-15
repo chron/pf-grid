@@ -8,13 +8,8 @@
 	border-style: solid;
 	border-color: gray;
 	border-width: 0px 1px 1px 0px;
-	width: 16px;
-	height: 16px;
-}
-
-.cell img {
-	width: 100%;
-	height: 100%;
+	width: 20px;
+	height: 20px;
 }
 
 .row .cell:first-child, .holding_area {
@@ -25,33 +20,63 @@
 	border-top-width: 1px;
 }
 
-.holding_area {
+.holding_area, #trash {
 	width: 100px;
 	height: 100px;
 }
-.grid div { background: black; }
+
+.cell { 
+	display:-webkit-box;
+	-webkit-box-pack:center;
+	-webkit-box-align:center;
+	background: whitesmoke;
+}
 
 .cell div {
-	border: none;
+	font-family: "Courier", "Sans-serif";
+	border-radius: 2px;
+	border: 1px solid gray;
+	background: black;
+	color: whitesmoke;
+	width: 16px;
+	height: 16px;
+}
+
+.cell div sup {
+	font-size: 50%;
+}
+
+.cell div img {
+	width: 100%;
+	height: 100%;
 }
 
 .cell.drop-hover {
-	background: red;
+	background: lightgoldenrodyellow;
 }
 
-/*
 .cell div.friendly { background: forestgreen; } 
 .cell div.friendly:hover { background: green; }
-			
+
+.cell div.neutral { background: gold; } 
+.cell div.neutral:hover { background: lightgoldenrodyellow; }
+
 .cell div.hostile { background: indianred; }
-.cell div.hostile:hover { background: khaki; }
-*/
+.cell div.hostile:hover { background: red; }
+
+#workspace {
+	position: fixed;
+	right: 10px;
+	top: 10px;
+	width: 200px;
+}
 
 #controls {
-	background: lightgoldenrodyellow;
-	position: fixed;
-	border: 1px dotted black;
+	font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+	font-size: 62.5%;
+	position: fixed;	
 	right: 10px;
 	bottom: 10px;
-	width: 300px;
+	padding: 4px;
+    display: inline-block;
 }

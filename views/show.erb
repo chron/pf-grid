@@ -1,19 +1,73 @@
 <html>
 	<head>
-		<title>test</title>
+		<title><%= @board.name %></title>
 		<meta charset="utf-8" />
-    	<link href="/css/style.css" rel="Stylesheet" type="text/css" />
+        <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.0/themes/base/jquery-ui.css" />
+    	<link rel="stylesheet" href="/css/style.css" type="text/css" />
     	<script src="http://code.jquery.com/jquery-1.9.0.js"> </script>
     	<script src="http://code.jquery.com/ui/1.10.0/jquery-ui.js"> </script>
 		<script src="/scripts/pf-grid.js"> </script>
-	</head>
-	<body onload="init()">
-    	<div id="main_grid" class="grid"></div>
-    	<div id="grid_-1_-1" class="cell holding_area"> </div>
 
-    	<div id="controls">
-    		<input type="text" id="entity_name"/><button onclick="sendCreateRequest($('#entity_name').val())">Create Unit</button> <br />
-    		<button onclick="updatePositions()">Update</button>
+        <script>
+            $(function(){
+                grid = new BattleGrid('#main_grid', <%= @board.width %>, <%= @board.height %>)
+                // $('#controls').accordion({ collapsible: true })
+                $('#create-unit').button({
+                    text: '',
+                    icons: { primary: 'ui-icon-plusthick' }
+                }).click(function() {
+                    var name = $('#entity_name').val()
+                    var type = $('#bsEntityType input:checked').val()
+                    grid.sendCreateRequest(name, type)
+                    $('#entity_name').val('')
+                })
+
+                $('#refresh').button({
+                    text: '',
+                    icons: { primary: 'ui-icon-refresh' }
+                }).click(function() {
+                    grid.updatePositions()
+                })
+
+                $('#lock').button({
+                    text: '',
+                    icons: { primary: 'ui-icon-locked' }
+                }).click(function() {
+                    var et = $('#edit-tools')
+
+                    if (et.css('display') == 'none') {
+                        et.show('slide', {direction: 'left'}, 1000)
+                        $('#lock').button('option', 'icons', { primary: 'ui-icon-locked' })
+                    } else {
+                        et.hide('slide', {direction: 'right'}, 1000)
+                        $('#lock').button('option', 'icons', { primary: 'ui-icon-unlocked' })
+                    }
+                })
+
+                $('#bsEntityType').buttonset()
+            })
+        </script>
+	</head>
+	<body>
+    	<div id="main_grid" class="grid"></div>
+
+        <div id="workspace">
+    	   <div id="grid_-1_-1" class="cell holding_area"> </div>
+            <div id="trash" class="cell holding_area"> </div>
+        </div>
+
+    	<div id="controls" class="ui-widget-header ui-corner-all">
+            <input type="checkbox" id="lock" /><label for="lock">Lock</label>
+    		<span id="edit-tools">
+                <input type="text" class="text ui-widget-content ui-corner-all" id="entity_name"/>
+
+                <span id="bsEntityType"/>
+                    <input type="radio" id="bsEntityType1" name="entity_type" value="friendly" checked="checked"/><label for="bsEntityType1">friendly</label>
+                    <input type="radio" id="bsEntityType2" name="entity_type" value="hostile" /><label for="bsEntityType2">hostile</label>
+                </span>
+                <button id="create-unit">Create</button>
+                <button id="refresh">Update</button>
+            </span>
     	</div>
 	</body>
 </html>

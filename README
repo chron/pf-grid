@@ -1,8 +1,14 @@
 PF-Grid
 =======
 
-TODO: Describe software here.
+Really basic pure-HTML battle grid.
+
+Built on Sinatra/DataMapper with SQLite3, and using JQuery and JQueryUI on the front end.
 
 TODO List
 =========
-Change AJAX polling to Comet
+* Login/ownership/permissions?
+* Variable-size maps
+* Change AJAX polling to Comet
+* Support multi-tile units
+* Toggle cells as passable/impassable

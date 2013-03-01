@@ -1,6 +1,5 @@
-source :rubygems
+source 'http://rubygems.org'
 gem 'sinatra'
-gem 'thin'
 gem 'dm-core'
 gem 'dm-migrations'
 gem 'dm-aggregates'

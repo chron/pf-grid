@@ -1,3 +1,4 @@
+require 'json'
 require 'sinatra'
 require 'sinatra/reloader' if development?
 require 'dm-core'
@@ -5,7 +6,7 @@ require 'dm-migrations'
 require 'dm-aggregates'
 require 'pg'
 
-DataMapper.setup(:default, ENV['DATABASE_URL'] || "postgres://#{Dir.pwd}/pfgrid.db")
+DataMapper.setup(:default, ENV['DATABASE_URL'] || "postgres://pfgrid:test@localhost:5432/pfgrid")
 
 class Board
 	include DataMapper::Resource
